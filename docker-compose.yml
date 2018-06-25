@@ -1,0 +1,38 @@
+version: '3'
+services:
+  mysql:
+    container_name: mysql
+    build:
+      context: .
+      dockerfile: ./docker/mysql/Dockerfile
+    hostname: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_USER: root
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: password
+    # オプションは日本語文の字化けに対するおまじない
+    command: mysqld --character-set-server=utf8 --collation-server=utf8_unicode_ci --skip-character-set-client-handshake
+    volumes:
+      # DBデータの永続化
+      - "db-data:/var/lib/mysql"
+      # 初期設定を読み込む
+      - "./docker/mysql/my.conf:/etc/mysql/my.conf"
+      # MySQL起動時にDBを作成する
+      - "./docker/mysql/init/:/docker-entrypoint-initdb.d"
+  sample_docker_compose:
+    links:
+      - mysql
+    build:
+      context: .
+      dockerfile: ./docker/golang/Dockerfile
+    container_name: sample_docker_compose
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/go/src/sample_docker_compose
+    command: sh ./scripts/start_app.sh
+volumes:
+  db-data:
+    driver: local
